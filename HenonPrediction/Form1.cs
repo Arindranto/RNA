@@ -15,6 +15,8 @@ namespace HenonPrediction
         public Form1()
         {
             InitializeComponent();
+            HenonSeries hs = new HenonSeries(1.4, 0.3);
+            hs.GenerateSeries(0, 0, 500);
         }
     }
 }
