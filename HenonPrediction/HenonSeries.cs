@@ -39,17 +39,49 @@ namespace HenonPrediction
 
     class HenonTerm
     {
-        public double X { get; protected set; }
-        public double Y { get; protected set; }
-
-        public HenonTerm(double x, double y)
+        protected double x, y;
+        protected int precision = 8;
+        protected string precisionFormat;
+        public int Precision
         {
+            get { return precision; }
+            set
+            {
+                precision = value;
+                precisionFormat = string.Concat("0.", new string('0', precision));
+                // Reformat the number
+                X = X;
+                Y = Y;
+            }
+        }
+        public double X {
+            get {
+                return x;
+            }
+            protected set {
+                x = double.Parse(value.ToString(precisionFormat));
+            }
+        }
+        public double Y {
+            get { return y; }
+            protected set {
+                y = double.Parse(value.ToString(precisionFormat));
+            }
+        }
+
+        public HenonTerm(double x, double y, int precision)
+        {
+            Precision = precision;
             X = x;
             Y = y;
         }
+        public HenonTerm(double x, double y): this(x, y, 8)
+        {
+            // 8 point precision by default
+        }
         public override string ToString()
         {
-            return $"[{X}, {Y}]";
+            return $"[{X.ToString("0.00000000")}, {Y.ToString("0.00000000")}]";
         }
     }
 }
