@@ -10,6 +10,8 @@ namespace HenonPrediction
     {
         public double A { get; protected set; }
         public double B { get; protected set; }
+        private bool startFlag = false;
+        private List<HenonTerm> series;
         public HenonSeries(double a, double b)
         {
             A = a;
@@ -18,16 +20,22 @@ namespace HenonPrediction
         public HenonSeries(): this(0, 0)
         {
         }
-        public void GenerateSeries(double initX, double initY, int term)
+        public List<HenonTerm> GenerateSeries(double initX, double initY, int term)
         {
+            if (!startFlag)
+            {
+                startFlag = true;
+                series = new List<HenonTerm>();
+            }
             HenonTerm prev = new HenonTerm(initX, initY);
-            Console.WriteLine(prev);
+            series.Add(prev);
             if (term < 0)
             {
-                return;
+                startFlag = false;   // End the recursive call
+                return series;
             }
             HenonTerm next = generateNext(prev);
-            GenerateSeries(next.X, next.Y, term - 1);
+            return GenerateSeries(next.X, next.Y, term - 1);
         }
         protected HenonTerm generateNext(HenonTerm prev)
         {
