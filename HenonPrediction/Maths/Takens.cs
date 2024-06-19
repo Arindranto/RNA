@@ -12,6 +12,7 @@ namespace HenonPrediction.Maths
         public Takens(int precision): base(precision)
         {
         }
+        public Takens(): this(8) { }
 
         private double mean(double[] vector)
         {

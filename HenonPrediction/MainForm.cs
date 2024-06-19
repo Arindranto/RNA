@@ -105,6 +105,8 @@ namespace HenonPrediction
 
             HenonSeries hs = new HenonSeries(1.4, 0.3);
             List<HenonTerm> original500 = hs.GenerateSeries(0, 0, 500);
+            Takens takens = new Takens();
+            takens.ApproximationError();
             // Original 500 values of Henon value
             Series originalSeries = addSeries("Original500", "500 premières valeurs de la série de Hénon", "SecondaryArea");
             plotXYSeries(originalSeries, original500);

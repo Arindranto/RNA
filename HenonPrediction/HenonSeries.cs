@@ -38,6 +38,16 @@ namespace HenonPrediction
             HenonTerm next = generateNext(prev);
             return GenerateSeries(next.X, next.Y, term - 1);
         }
+        public static double[] ExtractXValue(List<HenonTerm> hs)
+        {
+            double[] x = (from t in hs select t.X).ToArray();
+            return x;
+        }
+        public static double[] ExtractYValue(List<HenonTerm> hs)
+        {
+            double[] y = (from t in hs select t.Y).ToArray();
+            return y;
+        }
         protected HenonTerm generateNext(HenonTerm prev)
         {
             double nextX = prev.Y + 1 - A * Math.Pow(prev.X, 2);
