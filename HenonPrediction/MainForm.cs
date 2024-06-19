@@ -217,7 +217,7 @@ namespace HenonPrediction
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            SquareMatrix matrix = new SquareMatrix(new double[,] { { 1, 2 }, { 2, 1 } }, 10e-5, 8);
+            SquareMatrix matrix = new SquareMatrix(new double[,] { { 2, 0, -2 }, { 0, 8, 0 }, { -2, 0, 2 } }, 10e-8, 8);
             Console.WriteLine("matrix");
             foreach (double lambda in matrix.ValeursPropres)
             {

@@ -111,7 +111,7 @@ namespace HenonPrediction.Maths
             for (int i = 0; i < A.Dimension; i++) {
                 for (int j = 0; j < A.Dimension; j++)
                 {
-                    if (i != j && A[i, j] > max)
+                    if (i != j && Math.Abs(A[i, j]) > max)
                     {
                         return true;
                     }
@@ -155,6 +155,7 @@ namespace HenonPrediction.Maths
                     }
                 }
                 A = P * A * P.Transposed();
+                Console.WriteLine(A);
             }
             eigen = new double[Dimension];
             for (int i = 0; i < Dimension; i++)
