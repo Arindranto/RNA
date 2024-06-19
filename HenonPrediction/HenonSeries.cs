@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HenonPrediction.Formatting;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -45,41 +46,26 @@ namespace HenonPrediction
         } 
     }
 
-    class HenonTerm
+    class HenonTerm: PreciseDouble
     {
         protected double x, y;
-        protected int precision = 8;
-        protected string precisionFormat;
-        public int Precision
-        {
-            get { return precision; }
-            set
-            {
-                precision = value;
-                precisionFormat = string.Concat("0.", new string('0', precision));
-                // Reformat the number
-                X = X;
-                Y = Y;
-            }
-        }
         public double X {
             get {
                 return x;
             }
             protected set {
-                x = double.Parse(value.ToString(precisionFormat));
+                x = Parse(value);
             }
         }
         public double Y {
             get { return y; }
             protected set {
-                y = double.Parse(value.ToString(precisionFormat));
+                y = Parse(value);
             }
         }
 
-        public HenonTerm(double x, double y, int precision)
+        public HenonTerm(double x, double y, int precision): base(precision)
         {
-            Precision = precision;
             X = x;
             Y = y;
         }
@@ -89,7 +75,14 @@ namespace HenonPrediction
         }
         public override string ToString()
         {
-            return $"[{X.ToString("0.00000000")}, {Y.ToString("0.00000000")}]";
+            return $"[{X.ToString(precisionFormat)}, {Y.ToString(precisionFormat)}]";
+        }
+
+        protected override void PostModification()
+        {
+            // Adjust value
+            X = X;
+            Y = Y;
         }
     }
 }

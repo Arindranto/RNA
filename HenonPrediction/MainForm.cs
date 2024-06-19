@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Data.SQLite;
 using System.IO;
+using HenonPrediction.Maths;
 
 namespace HenonPrediction
 {
@@ -101,19 +102,14 @@ namespace HenonPrediction
             this.graph.Legends.Add(legend);
 
             yEnFonctionDeXToolStripMenuItem_Click(null, null);  // Select the first menu
-            //mainArea.AxisX.Interval = 1.0;
-            //mainArea.AxisX.ScrollBar = new AxisScrollBar();
-            //mainArea.AxisX.ScaleView = new AxisScaleView();
 
             HenonSeries hs = new HenonSeries(1.4, 0.3);
             List<HenonTerm> original500 = hs.GenerateSeries(0, 0, 500);
             // Original 500 values of Henon value
             Series originalSeries = addSeries("Original500", "500 premières valeurs de la série de Hénon", "SecondaryArea");
             plotXYSeries(originalSeries, original500);
-            graph.MouseWheel += HandleMouseWheel;
+            //graph.MouseWheel += HandleMouseWheel;
             refresh();
-            //Series testSeries = addSeries("testSeries", "Valeur de X");
-            //plotSeries(testSeries, original500);
         }
         void refresh()
         {
@@ -148,13 +144,15 @@ namespace HenonPrediction
         void ZoomIn()
         {
             //area.AxisX.ScaleView.Zoom(min, zoomSize);
-            zoomSize = (zoomSize - min)/10;
+            zoomSize = (zoomSize - min);
             ActiveArea.AxisX.ScaleView.Zoom(min, zoomSize);
             ActiveArea.AxisX.ScaleView.SmallScrollSize = zoomSize;
         }
         void ZoomOut()
         {
-            Console.WriteLine("----");
+            zoomSize = (zoomSize - min);
+            ActiveArea.AxisX.ScaleView.Zoom(min, zoomSize);
+            ActiveArea.AxisX.ScaleView.SmallScrollSize = zoomSize;
         }
         void plotXYSeries(Series series, List<HenonTerm> points)
         {
@@ -219,6 +217,12 @@ namespace HenonPrediction
 
         private void MainForm_Load(object sender, EventArgs e)
         {
+            SquareMatrix matrix = new SquareMatrix(new double[,] { { 1, 2 }, { 2, 1 } }, 10e-5, 8);
+            Console.WriteLine("matrix");
+            foreach (double lambda in matrix.ValeursPropres)
+            {
+                Console.WriteLine(lambda);
+            }
             string path = Path.Combine(Application.StartupPath, "henon.db");
             string connString = $"Data Source={path}";
             connection = new SQLiteConnection(connString);
