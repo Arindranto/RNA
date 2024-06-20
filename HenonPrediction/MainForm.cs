@@ -106,7 +106,11 @@ namespace HenonPrediction
             HenonSeries hs = new HenonSeries(1.4, 0.3);
             List<HenonTerm> original500 = hs.GenerateSeries(0, 0, 500);
             Takens takens = new Takens();
-            takens.ApproximationError();
+            double[] approximation = takens.ApproximationError(HenonSeries.ExtractXValue(original500), 50, 10);
+            foreach (double d in approximation)
+            {
+                Console.WriteLine($"------{d}------");
+            }
             // Original 500 values of Henon value
             Series originalSeries = addSeries("Original500", "500 premières valeurs de la série de Hénon", "SecondaryArea");
             plotXYSeries(originalSeries, original500);
@@ -220,7 +224,8 @@ namespace HenonPrediction
         private void MainForm_Load(object sender, EventArgs e)
         {
             SquareMatrix matrix = new SquareMatrix(new double[,] { { 2, 0, -2 }, { 0, 8, 0 }, { -2, 0, 2 } }, 10e-8, 8);
-            Console.WriteLine("matrix");
+            //SquareMatrix matrix = new SquareMatrix(new double[,] { { 3, 1 }, { 1 , 3 } }, 10e-8, 8);
+            Console.WriteLine(matrix);
             foreach (double lambda in matrix.ValeursPropres)
             {
                 Console.WriteLine(lambda);

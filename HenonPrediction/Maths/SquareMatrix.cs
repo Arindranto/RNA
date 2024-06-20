@@ -123,6 +123,21 @@ namespace HenonPrediction.Maths
         {
             return !(A > d);
         }
+        public double Min()
+        {
+            double min = double.PositiveInfinity;
+            for (int i = 0; i < Dimension; i++)
+            {
+                for (int j = 0; j < Dimension; j++)
+                {
+                    if (i != j && Math.Abs(this[i, j]) < min)
+                    {
+                        min = this[i, j];
+                    }
+                }
+            }
+            return min;
+        }
         public void JacobiEigen()
         {
             // Calcul des valeurs propres par l'algorithme de Jacobi
@@ -133,6 +148,7 @@ namespace HenonPrediction.Maths
 
             while (A > A.Threshold)
             {
+                Console.WriteLine(A.Min());
                 for (int i = 0; i < Dimension; i++)
                 {
                     for (int j = 0; j < Dimension; j++)
@@ -141,9 +157,9 @@ namespace HenonPrediction.Maths
                         {
                             b = Math.Abs(A[i, i] - A[j, j]);
                             c = 2 * A[i, j] * Math.Sign(A[i, i] - A[j, j]);
-                            P[i, i] = Math.Sqrt((1 + b / (c*c + b*b)));
+                            P[i, i] = Math.Sqrt((1 + b / Math.Sqrt(c*c + b*b))/2);
                             P[j, j] = P[i, i];
-                            P[i, j] = -c / (2 * P[i, i] * Math.Sqrt(c * c + b * b));
+                            P[i, j] = -c / (2 * P[i, i] * Math.Sqrt(c*c + b*b));
                             P[j, i] = -P[i, j];
                         }
                         else
@@ -155,7 +171,6 @@ namespace HenonPrediction.Maths
                     }
                 }
                 A = P * A * P.Transposed();
-                Console.WriteLine(A);
             }
             eigen = new double[Dimension];
             for (int i = 0; i < Dimension; i++)

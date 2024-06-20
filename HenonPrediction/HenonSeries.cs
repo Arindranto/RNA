@@ -23,6 +23,11 @@ namespace HenonPrediction
         }
         public List<HenonTerm> GenerateSeries(double initX, double initY, int term)
         {
+            if (term == 0)
+            {
+                startFlag = false;   // End the recursive call
+                return series;
+            }
             if (!startFlag)
             {
                 startFlag = true;
@@ -30,11 +35,6 @@ namespace HenonPrediction
             }
             HenonTerm prev = new HenonTerm(initX, initY);
             series.Add(prev);
-            if (term < 0)
-            {
-                startFlag = false;   // End the recursive call
-                return series;
-            }
             HenonTerm next = generateNext(prev);
             return GenerateSeries(next.X, next.Y, term - 1);
         }

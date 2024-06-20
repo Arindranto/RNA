@@ -38,9 +38,73 @@ namespace HenonPrediction.Maths
         {
             return covariance(vector, vector);
         }
-        public double[] ApproximationError(double[] series)
+        public double[] ApproximationError(double[] series, int n, int delay)
         {
-            return new double[1];
+            // Generate the series considering n and delay
+            List<double[]> delaySeries = new List<double[]>();
+            Dictionary<int, int> repetition = new Dictionary<int, int>();
+            int idx = 0;
+            bool exhausted = false;
+            double[] delayVector;
+            int seriesIndex;
+            while (!exhausted)
+            {
+                delayVector = new double[n];
+                for (int i = 0; i < n; i++)
+                {
+                    seriesIndex = idx + i * delay;
+                    int j;
+                    if (repetition.TryGetValue(seriesIndex, out j))
+                    {
+                        repetition[seriesIndex] = j + 1;
+                        Console.WriteLine(seriesIndex + " apparait " + repetition[seriesIndex] + " fois");
+                    }
+                    else
+                    {
+                        repetition[seriesIndex] = 1;
+                    }
+                    if (seriesIndex < series.Length)
+                    {
+                        delayVector[i] = series[seriesIndex];
+                    }
+                    else
+                    {
+                        delayVector[i] = 0.0;
+                        exhausted = true;   // Series exhausted
+                    }
+                }
+                delaySeries.Add(delayVector);
+                if (exhausted)
+                    break;
+                idx++;
+            }
+            idx = 0;
+            foreach (double[] term in delaySeries)
+            {
+                string str = "[";
+                foreach (double d in term)
+                {
+                    str += $"{Parse(d)}\t";
+                }
+                str = str.Trim();
+                str += "]";
+                Console.WriteLine($"xbar{idx}[{term.Length}] => {str}");
+                idx++;
+            }
+
+            // Define covariance matrix
+            SquareMatrix covMatrix = new SquareMatrix(delaySeries.Count, 10e-2, precision);
+            for (int i = 0; i < covMatrix.Dimension; i++)
+            {
+                for (int j = 0; j < covMatrix.Dimension; j++)
+                {
+                    covMatrix[i, j] = covariance(delaySeries[i], delaySeries[j]);
+                }
+            }
+            Console.WriteLine(covMatrix);
+            delayVector = covMatrix.ValeursPropres;
+            Array.Sort(delayVector);
+            return delayVector;
         }
     }
 }
