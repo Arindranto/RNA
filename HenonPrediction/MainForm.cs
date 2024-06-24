@@ -107,13 +107,15 @@ namespace HenonPrediction
             List<HenonTerm> original500 = hs.GenerateSeries(0, 0, 500);
             Takens takens = new Takens();
             double[] approximation = takens.ApproximationError(HenonSeries.ExtractXValue(original500), 50, 10);
-            foreach (double d in approximation)
+            /*foreach (double d in approximation)
             {
-                Console.WriteLine($"------{d}------");
-            }
+                
+            }*/
             // Original 500 values of Henon value
             Series originalSeries = addSeries("Original500", "500 premières valeurs de la série de Hénon", "SecondaryArea");
             plotXYSeries(originalSeries, original500);
+            Series takensSeries = addSeries("TakensApprox", "Erreur d'approximation moyenne après l'algorithme de Takens");
+            plotXYSeries(takensSeries, approximation);
             //graph.MouseWheel += HandleMouseWheel;
             refresh();
         }
@@ -160,6 +162,15 @@ namespace HenonPrediction
             ActiveArea.AxisX.ScaleView.Zoom(min, zoomSize);
             ActiveArea.AxisX.ScaleView.SmallScrollSize = zoomSize;
         }
+        void plotXYSeries(Series series, double[] points)
+        {
+            int idx = 0;
+            foreach (double val in points)
+            {
+                series.Points.AddXY(idx, val);
+                idx++;
+            }
+        }
         void plotXYSeries(Series series, List<HenonTerm> points)
         {
             foreach (HenonTerm ht in points)
@@ -167,21 +178,36 @@ namespace HenonPrediction
                 series.Points.AddXY(ht.X, ht.Y);
             }
         }
-
+        void plotSeries(Series series, double[] points)
+        {
+            foreach (double d in points)
+            {
+                series.Points.Add(d);
+            }
+        }
         void plotSeries(Series series, List<HenonTerm> points, bool x)
         {
-            double pt;
+            if (x)
+            {
+                plotSeries(series, HenonSeries.ExtractXValue(points));
+            }
+            else
+            {
+                plotSeries(series, HenonSeries.ExtractYValue(points));
+            }
+            /*double pt;
             foreach (HenonTerm ht in points)
             {
                 pt = x ? ht.X : ht.Y;
                 series.Points.Add(pt);
-            }
+            }*/
         }
 
         void plotSeries(Series series, List<HenonTerm> points)
         {
             plotSeries(series, points, true);
         }
+        
         Color randomColor()
         {
             int index = random.Next() % availableColors.Count;

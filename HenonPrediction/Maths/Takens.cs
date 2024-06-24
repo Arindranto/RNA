@@ -63,6 +63,7 @@ namespace HenonPrediction.Maths
                     {
                         repetition[seriesIndex] = 1;
                     }
+
                     if (seriesIndex < series.Length)
                     {
                         delayVector[i] = series[seriesIndex];
@@ -79,7 +80,8 @@ namespace HenonPrediction.Maths
                 idx++;
             }
             idx = 0;
-            foreach (double[] term in delaySeries)
+            // Affichage des xbar
+            /*foreach (double[] term in delaySeries)
             {
                 string str = "[";
                 foreach (double d in term)
@@ -90,9 +92,10 @@ namespace HenonPrediction.Maths
                 str += "]";
                 Console.WriteLine($"xbar{idx}[{term.Length}] => {str}");
                 idx++;
-            }
+            }*/
 
             // Define covariance matrix
+            Console.WriteLine($"La série a {delaySeries.Count} vecteurs");
             SquareMatrix covMatrix = new SquareMatrix(delaySeries.Count, 10e-2, precision);
             for (int i = 0; i < covMatrix.Dimension; i++)
             {
@@ -101,10 +104,21 @@ namespace HenonPrediction.Maths
                     covMatrix[i, j] = covariance(delaySeries[i], delaySeries[j]);
                 }
             }
-            Console.WriteLine(covMatrix);
+            //Console.WriteLine(covMatrix);
             delayVector = covMatrix.ValeursPropres;
-            Array.Sort(delayVector);
-            return delayVector;
+            Array.Sort(delayVector, (x, y) => y.CompareTo(x));  // Descending order
+
+            double[] approxError = new double[covMatrix.Dimension];
+            // E[l] = sqrt(delayVector[l+1])
+            approxError[0] = 0.0;
+
+            for (int i = 1; i < delayVector.Length - 1; i++)
+            {
+                double val = Parse(Math.Sqrt(delayVector[i]));
+                approxError[i] = val;
+            }
+
+            return approxError;
         }
     }
 }
