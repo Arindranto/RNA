@@ -104,17 +104,6 @@ namespace HenonPrediction
 
             yEnFonctionDeXToolStripMenuItem_Click(null, null);  // Select the first menu
 
-            HenonSeries hs = new HenonSeries(1.4, 0.3);
-            List<HenonTerm> original500 = hs.GenerateSeries(0, 0, 500);
-            Series originalSeries = addSeries("Original500", "500 premières valeurs de la série de Hénon", "SecondaryArea");
-            plotXYSeries(originalSeries, original500);
-
-            /*
-            Takens takens = new Takens();
-            double[] approximation = takens.ApproximationError(HenonSeries.ExtractXValue(original500), 50, 10);
-            Series takensSeries = addSeries("TakensApprox", "Erreur d'approximation moyenne après l'algorithme de Takens");
-            plotXYSeries(takensSeries, approximation);
-            */
             //graph.MouseWheel += HandleMouseWheel;
             refresh();
         }
@@ -249,9 +238,81 @@ namespace HenonPrediction
         private void MainForm_Load(object sender, EventArgs e)
         {
             string path = Path.Combine(Application.StartupPath, "henon.db");
+            List<HenonTerm> original500 = null;
             string connString = $"Data Source={path}";
             connection = new SQLiteConnection(connString);
+            if (!File.Exists(path))
+            {
+                InitDb(path);
+                generateSeries(500);
+                /*
+                Takens takens = new Takens();
+                double[] approximation = takens.ApproximationError(HenonSeries.ExtractXValue(original500), 50, 10);
+                Series takensSeries = addSeries("TakensApprox", "Erreur d'approximation moyenne après l'algorithme de Takens");
+                plotXYSeries(takensSeries, approximation);
+                */
+            }
+
+            original500 = getFromDataBase(500);
+
+            Series originalSeries = addSeries("Original500", "500 premières valeurs de la série de Hénon", "SecondaryArea");
+            plotXYSeries(originalSeries, original500);
             TestNeuralNetwork();
+        }
+        void generateSeries(int limit)
+        {
+            HenonSeries hs = new HenonSeries(1.4, 0.3);
+            connection.Open();
+            SQLiteCommand generateCommand = connection.CreateCommand();
+            string generateQuery = "INSERT INTO Henon(n ,x, y) VALUES ";
+            List<HenonTerm> list = hs.GenerateSeries(0.0, 0.0, limit);
+            List<string> queryValues = list.Select((c, idx) => $"({idx + 1}, {c.X.ToString().Replace(",", ".")}, {c.Y.ToString().Replace(",", ".")})").ToList();
+
+            generateQuery += string.Join(",", queryValues);
+
+            generateCommand.CommandText = generateQuery;
+            generateCommand.ExecuteNonQuery();
+            generateCommand.Dispose();
+
+            connection.Close();
+        }
+        List<HenonTerm> getFromDataBase(int limit)
+        {
+            List<HenonTerm> l = new List<HenonTerm>();
+            connection.Open();
+            SQLiteCommand getHenon = connection.CreateCommand();
+            getHenon.CommandText = $"SELECT x, y FROM Henon ORDER BY n ASC LIMIT {limit}";
+            using (var reader = getHenon.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    double x = reader.GetDouble(0);
+                    double y = reader.GetDouble(1);
+                    HenonTerm ht = new HenonTerm(x, y);
+                    l.Add(ht);
+                }
+            }
+            connection.Close();
+            return l;
+        }
+        void InitDb(string path)
+        {
+            string createQuery = @"
+                CREATE TABLE Henon(
+                    id_henon INTEGER PRIMARY KEY,
+                    n INTEGER NOT NULL,
+                    x REAL NOT NULL,
+                    y REAL NOT NULL
+                )
+            ";
+            /*string connString = $"Data Source={path}";
+            connection = new SQLiteConnection(connString);*/
+            connection.Open();
+            SQLiteCommand createCommand = connection.CreateCommand();
+            createCommand.CommandText = createQuery;
+            createCommand.ExecuteNonQuery();
+            createCommand.Dispose();
+            connection.Close();
         }
         private void TestNeuralNetwork()
         {
