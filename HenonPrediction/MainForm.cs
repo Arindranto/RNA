@@ -11,6 +11,7 @@ using System.Windows.Forms.DataVisualization.Charting;
 using System.Data.SQLite;
 using System.IO;
 using HenonPrediction.Maths;
+using HenonPrediction.ANN;
 
 namespace HenonPrediction
 {
@@ -105,17 +106,15 @@ namespace HenonPrediction
 
             HenonSeries hs = new HenonSeries(1.4, 0.3);
             List<HenonTerm> original500 = hs.GenerateSeries(0, 0, 500);
-            Takens takens = new Takens();
-            double[] approximation = takens.ApproximationError(HenonSeries.ExtractXValue(original500), 50, 10);
-            /*foreach (double d in approximation)
-            {
-                
-            }*/
-            // Original 500 values of Henon value
             Series originalSeries = addSeries("Original500", "500 premières valeurs de la série de Hénon", "SecondaryArea");
             plotXYSeries(originalSeries, original500);
+
+            /*
+            Takens takens = new Takens();
+            double[] approximation = takens.ApproximationError(HenonSeries.ExtractXValue(original500), 50, 10);
             Series takensSeries = addSeries("TakensApprox", "Erreur d'approximation moyenne après l'algorithme de Takens");
             plotXYSeries(takensSeries, approximation);
+            */
             //graph.MouseWheel += HandleMouseWheel;
             refresh();
         }
@@ -249,18 +248,30 @@ namespace HenonPrediction
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            SquareMatrix matrix = new SquareMatrix(new double[,] { { 2, 0, -2 }, { 0, 8, 0 }, { -2, 0, 2 } }, 10e-8, 8);
-            //SquareMatrix matrix = new SquareMatrix(new double[,] { { 3, 1 }, { 1 , 3 } }, 10e-8, 8);
-            Console.WriteLine(matrix);
-            foreach (double lambda in matrix.ValeursPropres)
-            {
-                Console.WriteLine(lambda);
-            }
             string path = Path.Combine(Application.StartupPath, "henon.db");
             string connString = $"Data Source={path}";
             connection = new SQLiteConnection(connString);
+            TestNeuralNetwork();
         }
+        private void TestNeuralNetwork()
+        {
+            NeuralNetwork network = new NeuralNetwork(3, 2, 1, 0.1, 8);
+            
+            network.hiddenLayer[0].Weights[0] = 0.2;
+            network.hiddenLayer[0].Weights[1] = 0.1;
+            network.hiddenLayer[0].Weights[2] = 0.1;
+            
+            network.hiddenLayer[1].Weights[0] = 0.3;
+            network.hiddenLayer[1].Weights[1] = 0.2;
+            network.hiddenLayer[1].Weights[2] = 0.3;
+            
+            network.outputLayer[0].Weights[0] = 0.2;
+            network.outputLayer[0].Weights[1] = 0.3;
 
+            network.Train(new double[] { 1.0, 0.0, 1.0 }, new double[] { 1.0 });
+
+            network.ShowWeights();
+        }
         private void yEnFonctionDeXToolStripMenuItem_Click(object sender, EventArgs e)
         {
             MainMode = false;

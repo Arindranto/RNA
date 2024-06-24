@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HenonPrediction.Formatting
 {
-    class PreciseDouble
+    public class PreciseDouble
     {
         protected int precision = 8;
         protected string precisionFormat;
