@@ -67,16 +67,6 @@ namespace HenonPrediction
                 }
             }
         }
-        private void truncateDatabase()
-        {
-            connection.Open();
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = "DELETE FROM Henon";
-                command.ExecuteNonQuery();
-            }
-            connection.Close();
-        }
         public bool MainMode
         {
             get { return mode; }
@@ -90,7 +80,7 @@ namespace HenonPrediction
                     graph.Legends["SecondaryLegend"].Enabled = false;
                     graph.ChartAreas["MainArea"].Visible = true;
                     graph.Legends["MainLegend"].Enabled = true;
-                    //showMainControls();
+                    showMainControls();
                 }
                 else
                 {
@@ -160,7 +150,16 @@ namespace HenonPrediction
             mainSplit.Panel2.Controls.Add(tb);
             mainSplit.Panel2.Controls.Add(btn);
         }
-
+        private void truncateDatabase()
+        {
+            connection.Open();
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "DELETE FROM Henon";
+                command.ExecuteNonQuery();
+            }
+            connection.Close();
+        }
         private void PlotHenonNumber(object sender, EventArgs args)
         {
             int termNumber;
