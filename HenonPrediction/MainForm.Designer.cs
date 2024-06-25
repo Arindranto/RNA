@@ -96,6 +96,10 @@ namespace HenonPrediction
             // 
             this.mainSplit.Panel1.AutoScroll = true;
             this.mainSplit.Panel1.Controls.Add(this.graph);
+            // 
+            // mainSplit.Panel2
+            // 
+            this.mainSplit.Panel2.AutoScroll = true;
             this.mainSplit.Size = new System.Drawing.Size(800, 404);
             this.mainSplit.SplitterDistance = 633;
             this.mainSplit.TabIndex = 2;

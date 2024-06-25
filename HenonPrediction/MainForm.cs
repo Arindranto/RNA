@@ -12,6 +12,8 @@ using System.Data.SQLite;
 using System.IO;
 using HenonPrediction.Maths;
 using HenonPrediction.ANN;
+using HenonPrediction.Utils;
+using HenonPrediction.Forms;
 
 namespace HenonPrediction
 {
@@ -31,6 +33,50 @@ namespace HenonPrediction
         SQLiteConnection connection;
         private double min, max, zoomSize = 0.0;
         private bool mode;
+        private NeuralNetwork network;
+        private TextBox tbHenon;
+        private Series originalHenon;
+        private double a, b;
+        private double A
+        {
+            get
+            {
+                return a;
+            }
+            set
+            {
+                if (value != a)
+                {
+                    a = value;
+                    truncateDatabase();
+                }
+            }
+        }
+        private double B
+        {
+            get
+            {
+                return b;
+            }
+            set
+            {
+                if (value != b)
+                {
+                    b = value;
+                    truncateDatabase();
+                }
+            }
+        }
+        private void truncateDatabase()
+        {
+            connection.Open();
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "DELETE FROM Henon";
+                command.ExecuteNonQuery();
+            }
+            connection.Close();
+        }
         public bool MainMode
         {
             get { return mode; }
@@ -44,6 +90,7 @@ namespace HenonPrediction
                     graph.Legends["SecondaryLegend"].Enabled = false;
                     graph.ChartAreas["MainArea"].Visible = true;
                     graph.Legends["MainLegend"].Enabled = true;
+                    //showMainControls();
                 }
                 else
                 {
@@ -52,8 +99,108 @@ namespace HenonPrediction
                     graph.Legends["SecondaryLegend"].Enabled = true;
                     graph.ChartAreas["MainArea"].Visible = false;
                     graph.Legends["MainLegend"].Enabled = false;
+                    showSecondaryControls();
                 }
                 refresh();
+            }
+        }
+        void showMainControls()
+        {
+            mainSplit.Panel2.Controls.Clear();
+
+            TabControl tb = new TabControl();
+            tb.Name = "mainTabControl";
+            tb.Dock = DockStyle.Fill;
+
+            // 2 tabpages
+            TabPage tp = new TabPage();
+            tp.Text = "Apprentissage";
+            tp.Name = "training";
+            tb.TabPages.Add(tp);
+
+            tp = new TabPage();
+            tp.Text = "Prédiction";
+            tp.Name = "prediction";
+            tb.TabPages.Add(tp);
+
+            mainSplit.Panel2.Controls.Add(tb);
+        }
+        void showSecondaryControls()
+        {
+            string value = "500";
+            if (tbHenon != null)
+            {
+                value = tbHenon.Text;
+            }
+            mainSplit.Panel2.Controls.Clear();
+
+            Font font = new Font("Verdana", 10.0F, FontStyle.Bold);
+
+            Label lbl = new Label();
+            lbl.Location = new Point(20, 30);
+            lbl.Font = font;
+            lbl.Text = "Nombre de point à afficher";
+            lbl.AutoSize = true;
+
+            TextBox tb = new TextBox();
+            tb.Location = new Point(20, 35 + lbl.Height);
+            tb.Font = font;
+            tb.AutoSize = true;
+            tb.Text = value;
+            tb.KeyPress += NumberKeyPress;
+
+            Button btn = new Button();
+            btn.AutoSize = true;
+            btn.Text = "Afficher";
+            btn.Location = new Point(20, 40 + lbl.Height + tb.Height);
+            btn.Click += PlotHenonNumber;
+
+            tbHenon = tb;
+            mainSplit.Panel2.Controls.Add(lbl);
+            mainSplit.Panel2.Controls.Add(tb);
+            mainSplit.Panel2.Controls.Add(btn);
+        }
+
+        private void PlotHenonNumber(object sender, EventArgs args)
+        {
+            int termNumber;
+            if (!int.TryParse(tbHenon.Text, out termNumber))
+            {
+                Notifications.ShowError($"{tbHenon.Text} n'est pas un nombre");
+            }
+            else
+            {
+                if (originalHenon == null)
+                {
+                    originalHenon = addSeries("OriginalHenon","", "SecondaryArea");
+                }
+                originalHenon.Points.Clear();
+                originalHenon.LegendText = $"{termNumber} premières valeurs de la série de Hénon";
+                
+                List<HenonTerm> series = getTerm(termNumber);
+                
+                if (termNumber <= 20)
+                {
+                    originalHenon.IsValueShownAsLabel = true;
+                }
+                else
+                {
+                    originalHenon.IsValueShownAsLabel = false;
+                }
+
+                plotXYSeries(originalHenon, series);
+            }
+        }
+        private void NumberKeyPress(object sender, KeyPressEventArgs args)
+        {
+            if (args.KeyChar == 13)
+            {
+                args.Handled = true;
+                PlotHenonNumber(null, null);
+            }
+            else if (!"0123456789\b".Contains(args.KeyChar.ToString()))
+            {
+                args.Handled = true;
             }
         }
         public ChartArea ActiveArea
@@ -244,7 +391,6 @@ namespace HenonPrediction
             if (!File.Exists(path))
             {
                 InitDb(path);
-                generateSeries(500);
                 /*
                 Takens takens = new Takens();
                 double[] approximation = takens.ApproximationError(HenonSeries.ExtractXValue(original500), 50, 10);
@@ -252,32 +398,80 @@ namespace HenonPrediction
                 plotXYSeries(takensSeries, approximation);
                 */
             }
-
-            original500 = getFromDataBase(500);
-
-            Series originalSeries = addSeries("Original500", "500 premières valeurs de la série de Hénon", "SecondaryArea");
-            plotXYSeries(originalSeries, original500);
-            TestNeuralNetwork();
+            /*
+            Hide();
+            using (ABForm form = new ABForm())
+            {
+                form.ShowDialog();
+                if (form.DialogResult == DialogResult.OK)
+                {
+                    A = form.A;
+                    B = form.B;
+                    Show();
+                    TestNeuralNetwork();
+                }
+                else
+                {
+                    Application.Exit();
+                }
+            }*/
+            A = 1.2;
+            B = 0.4;
         }
         void generateSeries(int limit)
         {
-            HenonSeries hs = new HenonSeries(1.4, 0.3);
+            HenonSeries hs = new HenonSeries(A, B);
             connection.Open();
-            SQLiteCommand generateCommand = connection.CreateCommand();
-            string generateQuery = "INSERT INTO Henon(n ,x, y) VALUES ";
-            List<HenonTerm> list = hs.GenerateSeries(0.0, 0.0, limit);
-            List<string> queryValues = list.Select((c, idx) => $"({idx + 1}, {c.X.ToString().Replace(",", ".")}, {c.Y.ToString().Replace(",", ".")})").ToList();
+            int max = 0;
+            double start = 0.0;
+            double end = 0.0;
 
-            generateQuery += string.Join(",", queryValues);
+            using (SQLiteCommand existing = connection.CreateCommand())
+            {
+                existing.CommandText = "SELECT n, x, y FROM Henon WHERE n = (SELECT MAX(n) FROM Henon LIMIT 1) LIMIT 1";
 
-            generateCommand.CommandText = generateQuery;
-            generateCommand.ExecuteNonQuery();
-            generateCommand.Dispose();
+                using (var reader = existing.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        max = reader.GetInt32(0);
+                        start = reader.GetDouble(1);
+                        end = reader.GetDouble(2);
+                    }
+                }
+            }
+
+            if (limit > max)
+            {
+                // Insert
+                SQLiteCommand generateCommand = connection.CreateCommand();
+                string generateQuery = "INSERT INTO Henon(n ,x, y) VALUES ";
+                limit = limit - max;
+                if (max > 0)
+                {
+                    limit++;
+                }
+                List<HenonTerm> list = hs.GenerateSeries(start, end, limit);
+                if (max > 0)
+                {
+                    // Ignore first
+                    list.RemoveAt(0);
+                }
+                List<string> queryValues = list.Select((c, idx) => $"({max + idx + 1}, {c.X.ToString().Replace(",", ".")}, {c.Y.ToString().Replace(",", ".")})")
+                                               //.Where(arr => int.Parse(arr[0].ToString()) > max)
+                                               //.Select(arr => $"({arr[0]}, {arr[1].ToString().Replace(",",".")}, {arr[2].ToString().Replace(",", ".")})")
+                                               .ToList();
+                generateQuery += string.Join(",", queryValues);
+                generateCommand.CommandText = generateQuery;
+                generateCommand.ExecuteNonQuery();
+                generateCommand.Dispose();
+            }
 
             connection.Close();
         }
-        List<HenonTerm> getFromDataBase(int limit)
+        List<HenonTerm> getTerm(int limit)
         {
+            generateSeries(limit);
             List<HenonTerm> l = new List<HenonTerm>();
             connection.Open();
             SQLiteCommand getHenon = connection.CreateCommand();
