@@ -20,9 +20,9 @@ namespace HenonPrediction.Forms
             InitializeComponent();
         }
 
-        private void tbB_KeyPress(object sender, KeyPressEventArgs e)
+        public void tbB_KeyPress(object sender, KeyPressEventArgs e)
         {
-            if (!"0123456789.".Contains(e.KeyChar))
+            if (!"0123456789.\b".Contains(e.KeyChar))
             {
                 e.Handled = true;
             }
@@ -45,16 +45,6 @@ namespace HenonPrediction.Forms
             B = d;
             DialogResult = DialogResult.OK;
             Close();
-        }
-
-        private void tbB_TextChanged(object sender, EventArgs e)
-        {
-            TextBox tb = (TextBox)sender;
-            double d;
-            /*if (!double.TryParse(tb.Text, out d))
-            {
-                Notifications.ShowWarning($"{tb.Text} n'est pas un nombre valide");
-            }*/
         }
     }
 }

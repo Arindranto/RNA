@@ -23,8 +23,9 @@ namespace HenonPrediction
         {
             Color.Red,
             Color.Blue,
-            Color.Green,
-            Color.Teal,
+            Color.ForestGreen,
+            Color.SeaGreen,
+            Color.Navy,
             Color.Purple,
             Color.Gray,
             Color.Magenta,
@@ -35,7 +36,8 @@ namespace HenonPrediction
         private bool mode;
         private NeuralNetwork network;
         private TextBox tbHenon;
-        private Series originalHenon;
+        private Series originalHenon, takensSeries, originalXSeries;
+        private List<Series> predictedSeries;
         private double a, b;
         private double A
         {
@@ -94,10 +96,23 @@ namespace HenonPrediction
                 refresh();
             }
         }
+        public ChartArea ActiveArea
+        {
+            get
+            {
+                string areaName = "MainArea";
+                if (!MainMode)
+                {
+                    areaName = "SecondaryArea";
+                }
+                return graph.ChartAreas[areaName];
+            }
+        }
         void showMainControls()
         {
             mainSplit.Panel2.Controls.Clear();
-
+            Font font = new Font("Verdana", 10.0F, FontStyle.Bold);
+            Font font2 = new Font("Verdana", 9.0F, FontStyle.Underline);
             TabControl tb = new TabControl();
             tb.Name = "mainTabControl";
             tb.Dock = DockStyle.Fill;
@@ -108,12 +123,56 @@ namespace HenonPrediction
             tp.Name = "training";
             tb.TabPages.Add(tp);
 
+            int x = 20, y = 20;
+
+            Label lbl = new Label();
+            Button btn = new Button();
+
+            lbl.Font = font;
+            lbl.Text = "Unité d'entrées";
+            lbl.Location = new Point(x, y);
+            lbl.AutoSize = true;
+            lbl.Parent = tp;
+
+            btn.Text = "Générer par Takens";
+            btn.AutoSize = true;
+            btn.Location = new Point(x + 5 + lbl.Width, y - 5);
+            btn.Parent = tp;
+            btn.Click += ShowTakens;
+
             tp = new TabPage();
             tp.Text = "Prédiction";
             tp.Name = "prediction";
             tb.TabPages.Add(tp);
 
             mainSplit.Panel2.Controls.Add(tb);
+        }
+        void ShowTakens(object sender, EventArgs args)
+        {
+            if (takensSeries == null)
+            {
+                takensSeries = addSeries("takensSeries", "Erreur d'apporximation");
+                takensSeries.ChartType = SeriesChartType.Point;
+                takensSeries.IsValueShownAsLabel = true;
+            }
+            ActiveArea.AxisX.Interval = 1;
+            using (TakensForm form = new TakensForm())
+            {
+                form.ShowDialog();
+                if (form.DialogResult == DialogResult.OK)
+                {
+                    foreach (Series series in graph.Series.Where(s => s.ChartArea == ActiveArea.Name))
+                    {
+                        series.Points.Clear();
+                    }
+                    // Always force a 10 by 10 matrix
+                    List<HenonTerm> hs = getTerm(form.Size);
+                    Takens t = new Takens();
+                    double[] approxError = t.ApproximationError(HenonSeries.ExtractXValue(hs), form.N, form.T);
+                    plotXYSeries(takensSeries, approxError);
+                    refresh();
+                }
+            }
         }
         void showSecondaryControls()
         {
@@ -188,8 +247,10 @@ namespace HenonPrediction
                 }
 
                 plotXYSeries(originalHenon, series);
+                refresh();
             }
         }
+        
         private void NumberKeyPress(object sender, KeyPressEventArgs args)
         {
             if (args.KeyChar == 13)
@@ -200,18 +261,6 @@ namespace HenonPrediction
             else if (!"0123456789\b".Contains(args.KeyChar.ToString()))
             {
                 args.Handled = true;
-            }
-        }
-        public ChartArea ActiveArea
-        {
-            get
-            {
-                string areaName = "MainArea";
-                if (!MainMode)
-                {
-                    areaName = "SecondaryArea";
-                }
-                return graph.ChartAreas[areaName];
             }
         }
         private Random random = new Random();
@@ -384,7 +433,6 @@ namespace HenonPrediction
         private void MainForm_Load(object sender, EventArgs e)
         {
             string path = Path.Combine(Application.StartupPath, "henon.db");
-            List<HenonTerm> original500 = null;
             string connString = $"Data Source={path}";
             connection = new SQLiteConnection(connString);
             if (!File.Exists(path))
@@ -396,6 +444,11 @@ namespace HenonPrediction
                 Series takensSeries = addSeries("TakensApprox", "Erreur d'approximation moyenne après l'algorithme de Takens");
                 plotXYSeries(takensSeries, approximation);
                 */
+            }
+            SquareMatrix matrix = new SquareMatrix(new double[,] { { 0.9, 0.5, 0.2 }, { 0.5, 0.3, 0.4 }, { 0.2, 0.4, 0.8 } }, 10e-5, 8);
+            foreach (double eigen in matrix.ValeursPropres)
+            {
+                Console.WriteLine(eigen);
             }
             /*
             Hide();
@@ -507,6 +560,13 @@ namespace HenonPrediction
             createCommand.Dispose();
             connection.Close();
         }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            connection.Close();
+            connection.Dispose();
+        }
+
         private void TestNeuralNetwork()
         {
             NeuralNetwork network = new NeuralNetwork(3, 2, 1, 0.1, 8);

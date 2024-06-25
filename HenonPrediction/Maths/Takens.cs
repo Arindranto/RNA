@@ -57,7 +57,7 @@ namespace HenonPrediction.Maths
                     if (repetition.TryGetValue(seriesIndex, out j))
                     {
                         repetition[seriesIndex] = j + 1;
-                        Console.WriteLine(seriesIndex + " apparait " + repetition[seriesIndex] + " fois");
+                        //Console.WriteLine(seriesIndex + " apparait " + repetition[seriesIndex] + " fois");
                     }
                     else
                     {
@@ -74,9 +74,9 @@ namespace HenonPrediction.Maths
                         exhausted = true;   // Series exhausted
                     }
                 }
-                delaySeries.Add(delayVector);
                 if (exhausted)
                     break;
+                delaySeries.Add(delayVector);
                 idx++;
             }
             idx = 0;

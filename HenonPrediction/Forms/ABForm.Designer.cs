@@ -42,7 +42,6 @@ namespace HenonPrediction.Forms
             this.tbA.Name = "tbA";
             this.tbA.Size = new System.Drawing.Size(177, 20);
             this.tbA.TabIndex = 0;
-            this.tbA.TextChanged += new System.EventHandler(this.tbB_TextChanged);
             this.tbA.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbB_KeyPress);
             // 
             // tbB
@@ -51,7 +50,6 @@ namespace HenonPrediction.Forms
             this.tbB.Name = "tbB";
             this.tbB.Size = new System.Drawing.Size(177, 20);
             this.tbB.TabIndex = 1;
-            this.tbB.TextChanged += new System.EventHandler(this.tbB_TextChanged);
             this.tbB.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbB_KeyPress);
             // 
             // btnStart

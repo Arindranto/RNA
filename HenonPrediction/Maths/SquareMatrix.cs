@@ -241,7 +241,6 @@ namespace HenonPrediction.Maths
             while (A > A.Threshold && noChange != 0)
             {
                 P = Identity(Dimension);
-                //Console.WriteLine(A.Min());
 
                 maxIndex = A.MaxIndex();
                 int i = maxIndex[0];
@@ -253,6 +252,7 @@ namespace HenonPrediction.Maths
                     i = j;
                     j = tmp;
                 }
+                //Console.WriteLine(A[i, j]);
                 // Get the index max
                 /*for (int i = 0; i < Dimension; i++)
                 {

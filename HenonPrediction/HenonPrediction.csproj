@@ -74,6 +74,12 @@
     <Compile Include="Forms\ABForm.Designer.cs">
       <DependentUpon>ABForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\TakensForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\TakensForm.Designer.cs">
+      <DependentUpon>TakensForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -92,6 +98,9 @@
     <Compile Include="Utils\Notifications.cs" />
     <EmbeddedResource Include="Forms\ABForm.resx">
       <DependentUpon>ABForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\TakensForm.resx">
+      <DependentUpon>TakensForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
