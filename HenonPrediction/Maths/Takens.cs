@@ -14,30 +14,6 @@ namespace HenonPrediction.Maths
         }
         public Takens(): this(8) { }
 
-        private double mean(double[] vector)
-        {
-            return Parse(vector.Sum() / vector.Length);
-        }
-        private double covariance(double[] x, double[] y)
-        {
-            if (x.Length != y.Length)
-            {
-                throw new Exception("Les vecteurs ne sont pas de même longueur");
-            }
-            double mx = mean(x);
-            double my = mean(y);
-            double ret = 0.0;
-            for (int i = 0; i < x.Length; i++)
-            {
-                double d = (x[i] - mx) * (y[i]  - my);
-                ret += d;
-            }
-            return ret;
-        }
-        private double variance(double[] vector)
-        {
-            return covariance(vector, vector);
-        }
         public double[] ApproximationError(double[] series, int n, int delay)
         {
             // Generate the series considering n and delay
@@ -49,6 +25,7 @@ namespace HenonPrediction.Maths
             int seriesIndex;
             while (!exhausted)
             {
+                bool include = true;
                 delayVector = new double[n];
                 for (int i = 0; i < n; i++)
                 {
@@ -57,7 +34,6 @@ namespace HenonPrediction.Maths
                     if (repetition.TryGetValue(seriesIndex, out j))
                     {
                         repetition[seriesIndex] = j + 1;
-                        //Console.WriteLine(seriesIndex + " apparait " + repetition[seriesIndex] + " fois");
                     }
                     else
                     {
@@ -71,15 +47,24 @@ namespace HenonPrediction.Maths
                     else
                     {
                         delayVector[i] = 0.0;
+                        include = false;    // Don't include uncompleted vectors
                         exhausted = true;   // Series exhausted
                     }
                 }
-                if (exhausted)
-                    break;
-                delaySeries.Add(delayVector);
+                if (include)
+                {
+                    delaySeries.Add(delayVector);
+                }
                 idx++;
             }
             idx = 0;
+            foreach (KeyValuePair<int, int> kv in repetition)
+            {
+                if (kv.Value > 1)
+                {
+                    Console.WriteLine($"{kv.Key}: {kv.Value}x");
+                }
+            }
             // Affichage des xbar
             /*foreach (double[] term in delaySeries)
             {
@@ -101,7 +86,7 @@ namespace HenonPrediction.Maths
             {
                 for (int j = 0; j < covMatrix.Dimension; j++)
                 {
-                    covMatrix[i, j] = covariance(delaySeries[i], delaySeries[j]);
+                    covMatrix[i, j] = Stats.Covariance(delaySeries[i], delaySeries[j]);
                 }
             }
             //Console.WriteLine(covMatrix);

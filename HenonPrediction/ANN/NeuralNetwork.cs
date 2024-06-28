@@ -61,6 +61,33 @@ namespace HenonPrediction.ANN
         public NeuralNetwork(int input, int hidden) : this(input, hidden, 0.1)
         {
         }
+        public NeuralNetwork(NeuralNetwork network): base(network.Precision)
+        {
+            // Clone
+            int input = network.inputLayer.Length;
+            int hidden = network.hiddenLayer.Length;
+            int output = network.outputLayer.Length;
+
+            inputLayer = new Neuron[network.inputLayer.Length];
+            hiddenLayer = new Neuron[network.hiddenLayer.Length];
+            outputLayer = new Neuron[network.outputLayer.Length];
+            LearningStep = network.LearningStep;
+
+            for (int i = 0; i < input; i++)
+            {
+                inputLayer[i] = new Neuron(new double[] { 1.0 });
+            }
+            for (int i = 0; i < hidden; i++)
+            {
+                hiddenLayer[i] = new Neuron(new double[input]);
+            }
+            for (int i = 0; i < output; i++)
+            {
+                outputLayer[i] = new Neuron(new double[hidden]);
+            }
+
+            this.CopyWeight(network);
+        }
         public void ShowWeights()
         {
             string str = "";
@@ -144,6 +171,95 @@ namespace HenonPrediction.ANN
                     sum = LearningStep * outputLayerDeltas[i] * hiddenLayerOutputs[j];
                     outputLayer[i].Weights[j] = Parse(h - sum);
                 }
+            }
+        }
+        private void CopyWeight(NeuralNetwork network)
+        {
+            int input = inputLayer.Length;
+            int hidden = hiddenLayer.Length;
+            int output = outputLayer.Length;
+
+            for (int i = 0; i < hidden; i++)
+            {
+                for (int j = 0; j < input; j++) hiddenLayer[i].Weights[j] = network.hiddenLayer[i].Weights[j];
+            }
+            for (int i = 0; i < output; i++)
+            {
+                for (int j = 0; j < hidden; j++) outputLayer[i].Weights[j] = network.outputLayer[i].Weights[j];
+            }
+        }
+        public double EnterEpoch(double[] timeSeries, int prototypeNumber, double prev)
+        {
+            // Return the NMSE
+            if (outputLayer.Length != 1)
+            {
+                throw new Exception("Impossible de faire l'apprentissage avec plus de 1 unité de sortie");
+            }
+            double nmse = 0.0;
+            NeuralNetwork tmp = new NeuralNetwork(this);
+            for (int i = 0; i < prototypeNumber; i++)
+            {
+                tmp.CopyWeight(this);   // Clone to store the weights values
+                double[] inputData = timeSeries.Skip(i).Take(inputLayer.Length).ToArray();
+                double[] outputData = timeSeries.Skip(i + inputLayer.Length).Take(1).ToArray();
+                Train(inputData, outputData);
+                nmse += Math.Pow(outputData[0] - outputLayer[0].Output, 2.0);
+            }
+            nmse = nmse/(prototypeNumber * Stats.Variance(timeSeries.Take(inputLayer.Length + prototypeNumber).ToArray()));
+            if (nmse > prev)
+            {
+                // Surapprentissage
+                this.CopyWeight(tmp);
+            }
+            resetOutput();
+            return nmse;
+        }
+
+        public double[] Predict(double[] inputs)
+        {
+            if (inputs.Length != inputLayer.Length)
+            {
+                throw new Exception("Nombre d'entrées différents du nombre d'unité d'entrée");
+            }
+            double sum;
+            for (int i = 0; i < inputs.Length; i++)
+            {
+                inputLayer[i].Output = inputs[i];
+            }
+            for (int i = 0; i < hiddenLayer.Length; i++)
+            {
+                sum = 0.0;
+                for (int j = 0; j < inputs.Length; j++)
+                {
+                    sum += inputLayer[j].Output * hiddenLayer[i].Weights[j];
+                }
+                hiddenLayer[i].Output = hiddenLayer[i].Transfer(sum);
+            }
+            for (int i = 0; i < outputLayer.Length; i++)
+            {
+                sum = 0.0;
+                for (int j = 0; j < hiddenLayer.Length; j++)
+                {
+                    sum += hiddenLayer[j].Output * outputLayer[i].Weights[j];
+                }
+                outputLayer[i].Output = outputLayer[i].Transfer(sum);
+            }
+            double[] output = outputLayer.Select(neuron => Parse(neuron.Output)).ToArray();
+            resetOutput();
+            return output;
+        }
+        private void resetOutput() {
+            foreach (Neuron n in inputLayer)
+            {
+                n.Output = 0.0;
+            }
+            foreach (Neuron n in hiddenLayer)
+            {
+                n.Output = 0.0;
+            }
+            foreach (Neuron n in outputLayer)
+            {
+                n.Output = 0.0;
             }
         }
     }

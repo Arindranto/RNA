@@ -89,6 +89,7 @@
     <Compile Include="HenonSeries.cs" />
     <Compile Include="Formatting\PreciseDouble.cs" />
     <Compile Include="Maths\GeneralFunctions.cs" />
+    <Compile Include="Maths\Stats.cs" />
     <Compile Include="Maths\Takens.cs" />
     <Compile Include="ANN\NeuralNetwork.cs" />
     <Compile Include="ANN\Neuron.cs" />

@@ -167,7 +167,7 @@ namespace HenonPrediction
                     }
                     // Always force a 10 by 10 matrix
                     List<HenonTerm> hs = getTerm(form.Size);
-                    Takens t = new Takens();
+                    Takens t = new Takens(1);
                     double[] approxError = t.ApproximationError(HenonSeries.ExtractXValue(hs), form.N, form.T);
                     plotXYSeries(takensSeries, approxError);
                     refresh();
@@ -445,11 +445,6 @@ namespace HenonPrediction
                 plotXYSeries(takensSeries, approximation);
                 */
             }
-            SquareMatrix matrix = new SquareMatrix(new double[,] { { 0.9, 0.5, 0.2 }, { 0.5, 0.3, 0.4 }, { 0.2, 0.4, 0.8 } }, 10e-5, 8);
-            foreach (double eigen in matrix.ValeursPropres)
-            {
-                Console.WriteLine(eigen);
-            }
             /*
             Hide();
             using (ABForm form = new ABForm())
@@ -469,6 +464,31 @@ namespace HenonPrediction
             }*/
             A = 1.2;
             B = 0.4;
+            List<HenonTerm> hs = getTerm(500);
+            double[] xValues = HenonSeries.ExtractXValue(hs);
+            NeuralNetwork network = new NeuralNetwork(4, 3);
+            List<double> nmse = new List<double>();
+            nmse.Add(double.PositiveInfinity);
+            while (true)
+            {
+                double n = network.EnterEpoch(xValues, 100, nmse.Last());
+                if (n > nmse.Last())
+                {
+                    nmse.Add(n);
+                    break;
+                }
+                else
+                {
+                    nmse.Add(n);
+                }
+            }
+            for (int i = 0; i < nmse.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}, {network.Parse(nmse[i])}");
+            }
+            double prediction = network.Predict(xValues.Take(4).ToArray())[0];
+            network.outputLayer[0].Transfer = GeneralFunctions.Identity;
+            Console.WriteLine($"{prediction} ~ {xValues[4]}");
         }
         void generateSeries(int limit)
         {
