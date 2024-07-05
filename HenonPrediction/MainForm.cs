@@ -307,7 +307,7 @@ namespace HenonPrediction
             IEnumerable<Series> series = graph.Series.Where(s => s.ChartArea == ActiveArea.Name);
             if (series.Count() > 0)
             {
-                min = double.PositiveInfinity;
+                /*min = double.PositiveInfinity;
                 max = double.NegativeInfinity;
                 foreach (Series s in series)
                 {
@@ -316,7 +316,7 @@ namespace HenonPrediction
                 }
                 ActiveArea.AxisX.Minimum = min;
                 ActiveArea.AxisX.Maximum = max;
-                zoomSize = max;
+                zoomSize = max;*/
                 ActiveArea.AxisX.ScaleView.SmallScrollSize = zoomSize;
                 //ActiveArea.AxisX.ScaleView.Zoom(min, max);
             }
@@ -464,31 +464,52 @@ namespace HenonPrediction
             }*/
             A = 1.2;
             B = 0.4;
-            List<HenonTerm> hs = getTerm(500);
-            double[] xValues = HenonSeries.ExtractXValue(hs);
-            NeuralNetwork network = new NeuralNetwork(4, 3);
-            List<double> nmse = new List<double>();
-            nmse.Add(double.PositiveInfinity);
-            while (true)
+            NeuralNetwork network = new NeuralNetwork(4, 4);
+            List<HenonTerm> henons = getTerm(500);
+            double[] xValues = HenonSeries.ExtractXValue(henons);
+
+            Console.WriteLine("Before");
+            Console.WriteLine(network);
+            //double learningStep = 0.1;
+            List<double> errorList = new List<double>();
+            for (double learningStep = 1.0; learningStep > 0.1; learningStep -= 0.2)
             {
-                double n = network.EnterEpoch(xValues, 100, nmse.Last());
-                if (n > nmse.Last())
+                Console.WriteLine($"Learning step {learningStep}");
+                errorList.Clear();
+                errorList.Add(double.PositiveInfinity);
+                network.LearningStep = learningStep;
+                while (true)
                 {
-                    nmse.Add(n);
-                    break;
+                    double prev = errorList.Last();
+                    double nmse = network.EnterEpoch(xValues, 50, prev);
+                    errorList.Add(nmse);
+                    if (nmse > prev)
+                    {
+                        // Surapprentissage
+                        break;
+                    }
+                    Console.WriteLine(nmse);
                 }
-                else
-                {
-                    nmse.Add(n);
-                }
+                Series s = addSeries($"Pas d'apprentissage: {learningStep}", $"Pas d'apprentissage {learningStep}");
+                //plotXYSeries(s, errorList.Skip(1).ToArray());
             }
-            for (int i = 0; i < nmse.Count; i++)
+            Console.WriteLine("Finally");
+            Console.WriteLine(network);
+
+            List<double> predicted = new List<double>();
+            List<double> expected = new List<double>();
+            Series expectedGraph = addSeries($"Valeurs prédites", $"Valeurs prédites");
+            Series predictedGraph = addSeries($"Valeurs attendues", $"Valeurs attendues");
+            expectedGraph.ChartType = SeriesChartType.Point;
+            predictedGraph.ChartType = SeriesChartType.Point;
+            for (int i = 0; i < 50; i++)
             {
-                Console.WriteLine($"{i + 1}, {network.Parse(nmse[i])}");
+                expected.Add(xValues[4 + 1 + i]);
+                predicted.Add(network.Predict(xValues.Skip(i).Take(4).ToArray())[0]);
             }
-            double prediction = network.Predict(xValues.Take(4).ToArray())[0];
-            network.outputLayer[0].Transfer = GeneralFunctions.Identity;
-            Console.WriteLine($"{prediction} ~ {xValues[4]}");
+            plotXYSeries(expectedGraph, expected.ToArray());
+            plotXYSeries(predictedGraph, predicted.ToArray());
+
         }
         void generateSeries(int limit)
         {

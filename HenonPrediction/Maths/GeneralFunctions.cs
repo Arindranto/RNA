@@ -12,6 +12,10 @@ namespace HenonPrediction.Maths
         {
             return input;
         }
+        public static double IdentityPrime(double input)
+        {
+            return 1.0;
+        }
         public static double Sigmoid(double input)
         {
             return 1 / (1 + Math.Exp(-input));

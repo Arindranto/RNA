@@ -11,7 +11,7 @@ namespace HenonPrediction.ANN
     public class NeuralNetwork: PreciseDouble
     {
         public double LearningStep;
-        public Neuron[] inputLayer;
+        private Neuron[] inputLayer;    // Only to receive the input
         public Neuron[] hiddenLayer;
         public Neuron[] outputLayer;
         public NeuralNetwork(int input, int hidden, int output, double learningStep, int precision): base(precision)
@@ -117,6 +117,17 @@ namespace HenonPrediction.ANN
             double[] outputLayerDeltas = new double[outputLayer.Length];
             double h, sum;
 
+            foreach (Neuron n in hiddenLayer)
+            {
+                n.Transfer = GeneralFunctions.Sigmoid;
+                n.DerivatedTransfer = GeneralFunctions.SigmoidPrime;
+            }
+            foreach (Neuron n in outputLayer)
+            {
+                n.Transfer = GeneralFunctions.Sigmoid;
+                n.DerivatedTransfer = GeneralFunctions.SigmoidPrime;
+            }
+
             // Initialize
             for (int i = 0; i < inputs.Length; i++)
             {
@@ -127,7 +138,9 @@ namespace HenonPrediction.ANN
             // Forward Propagation
             for (int i = 0; i < hiddenLayer.Length; i++)
             {
-                hiddenLayer[i].Output = hiddenLayer[i].Transfer(hiddenLayer[i].Evaluate(inputLayerOutputs));
+                h = hiddenLayer[i].Evaluate(inputLayerOutputs);
+                double val = hiddenLayer[i].Transfer(h);
+                hiddenLayer[i].Output = val;
                 hiddenLayerOutputs[i] = hiddenLayer[i].Output;
             }
 
@@ -149,7 +162,8 @@ namespace HenonPrediction.ANN
                 {
                     sum += outputLayer[j].Weights[i] * outputLayerDeltas[j];
                 }
-                hiddenLayerDeltas[i] = hiddenLayer[i].DerivatedTransfer(h) * sum;
+                double delta = hiddenLayer[i].DerivatedTransfer(h) * sum;
+                hiddenLayerDeltas[i] = delta;
             }
 
             // Weights adjustment
@@ -159,7 +173,7 @@ namespace HenonPrediction.ANN
                 {
                     h = hiddenLayer[i].Weights[j];
                     sum = LearningStep * hiddenLayerDeltas[i] * inputLayerOutputs[j];
-                    hiddenLayer[i].Weights[j] = Parse(h - sum);
+                    hiddenLayer[i].Weights[j] = Parse(h + sum);
                 }
             }
 
@@ -169,9 +183,10 @@ namespace HenonPrediction.ANN
                 {
                     h = outputLayer[i].Weights[j];
                     sum = LearningStep * outputLayerDeltas[i] * hiddenLayerOutputs[j];
-                    outputLayer[i].Weights[j] = Parse(h - sum);
+                    outputLayer[i].Weights[j] = Parse(h + sum);
                 }
             }
+            resetOutput();
         }
         private void CopyWeight(NeuralNetwork network)
         {
@@ -203,9 +218,13 @@ namespace HenonPrediction.ANN
                 double[] inputData = timeSeries.Skip(i).Take(inputLayer.Length).ToArray();
                 double[] outputData = timeSeries.Skip(i + inputLayer.Length).Take(1).ToArray();
                 Train(inputData, outputData);
-                nmse += Math.Pow(outputData[0] - outputLayer[0].Output, 2.0);
+                double networkOutput = Predict(inputData)[0];
+                nmse += Math.Pow(outputData[0] - networkOutput, 2.0);
             }
-            nmse = nmse/(prototypeNumber * Stats.Variance(timeSeries.Take(inputLayer.Length + prototypeNumber).ToArray()));
+            // 1/(N * var) * (sum((predicted - expected)²))
+            //int totalUsed = inputLayer.Length + prototypeNumber;
+            //nmse = nmse/(prototypeNumber * Stats.Variance(timeSeries.Take(totalUsed).ToArray()));
+            nmse /= prototypeNumber;
             if (nmse > prev)
             {
                 // Surapprentissage
@@ -221,6 +240,18 @@ namespace HenonPrediction.ANN
             {
                 throw new Exception("Nombre d'entrées différents du nombre d'unité d'entrée");
             }
+
+            foreach (Neuron n in hiddenLayer)
+            {
+                n.Transfer = GeneralFunctions.Sigmoid;
+                //n.DerivatedTransfer = GeneralFunctions.SigmoidPrime;
+            }
+            foreach (Neuron n in outputLayer)
+            {
+                n.Transfer = GeneralFunctions.Sigmoid;
+                //n.DerivatedTransfer = GeneralFunctions.SigmoidPrime;
+            }
+
             double sum;
             for (int i = 0; i < inputs.Length; i++)
             {
@@ -228,20 +259,20 @@ namespace HenonPrediction.ANN
             }
             for (int i = 0; i < hiddenLayer.Length; i++)
             {
-                sum = 0.0;
-                for (int j = 0; j < inputs.Length; j++)
+                sum = hiddenLayer[i].Evaluate(inputLayer.Select(n => n.Output).ToArray());
+                /*for (int j = 0; j < inputs.Length; j++)
                 {
                     sum += inputLayer[j].Output * hiddenLayer[i].Weights[j];
-                }
+                }*/
                 hiddenLayer[i].Output = hiddenLayer[i].Transfer(sum);
             }
             for (int i = 0; i < outputLayer.Length; i++)
             {
-                sum = 0.0;
-                for (int j = 0; j < hiddenLayer.Length; j++)
+                sum = outputLayer[i].Evaluate(hiddenLayer.Select(n => n.Output).ToArray());
+                /*for (int j = 0; j < hiddenLayer.Length; j++)
                 {
                     sum += hiddenLayer[j].Output * outputLayer[i].Weights[j];
-                }
+                }*/
                 outputLayer[i].Output = outputLayer[i].Transfer(sum);
             }
             double[] output = outputLayer.Select(neuron => Parse(neuron.Output)).ToArray();
@@ -261,6 +292,27 @@ namespace HenonPrediction.ANN
             {
                 n.Output = 0.0;
             }
+        }
+
+        public override string ToString()
+        {
+            string str = "{";
+            foreach (Neuron n in inputLayer)
+            {
+                str += $"[{n}]";
+            }
+            str += "-->";
+            foreach (Neuron n in hiddenLayer)
+            {
+                str += $"[{n}]";
+            }
+            str += "==>";
+            foreach (Neuron n in outputLayer)
+            {
+                str += $"[{n}]";
+            }
+            str += "}";
+            return str;
         }
     }
 }
